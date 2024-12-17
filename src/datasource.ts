@@ -15,13 +15,16 @@ import {
   DataQueryResponse,
   DataSourceApi,
   DataSourceInstanceSettings,
-//  MutableDataFrame,
-//  FieldType,
+  MutableDataFrame,
+  FieldType,
 } from '@grafana/data';
 
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 
 import { MyQuery, MyDataSourceOptions } from './types';
+
+import {createParser, type EventSourceMessage} from 'eventsource-parser';
+
 
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   endpoint: string;
@@ -39,12 +42,15 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       url: this.url + "/logs" + path,
       params
     }
+    console.error('created a request');
     const result = await getBackendSrv().datasourceRequest(req);
     return result;
   }
 
   async doStream(path: any, params?: any) {
     const url = this.url + "/logs" + path;
+    console.error(`{url} {params}`);
+    console.error(url, params);
     const response = await fetch(url, {
       method: "POST",
       cache: "no-cache",
@@ -61,11 +67,24 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       return;
     }
 
+    const dataFrames: any[] = [];
+
+    function onEvent(event: EventSourceMessage) {
+      console.log('Received event!')
+      console.log('id: %s', event.id || '<none>')
+      console.log('data: %s', event.data)
+      const data = JSON.parse(event.data);
+      data.result?.results?.forEach((result: any) => {
+        dataFrames.push(result);
+      })
+    }
+
+
+    const parser = createParser({onEvent})
     while (true) {
       const {value, done} = await reader.read();
-      if (done) {break;}
-
-      console.log('get.message', new TextDecoder().decode(value));
+      parser.feed(new TextDecoder().decode(value));
+      if (done) {return dataFrames}
     }
   }
 
@@ -73,7 +92,6 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const { range } = options;
     const start_date = new Date(range!.from.valueOf()).toISOString();
     const end_date = new Date(range!.to.valueOf()).toISOString();
-
     const metadata = {
       start_date,
       end_date,
@@ -90,8 +108,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         console.log(query, metadata);
 
         return this.doStream('/v1/query', {query, metadata }).then((response) => {
-          console.log(response);
-/*         response.data?.lines?.forEach((line: any) => {
+          console.error(response);
+          if (response == null) { return; }
+          response.forEach((line: any) => {
+          const userData = JSON.parse(line.user_data)
           const frame = new MutableDataFrame({
             refId: target.refId,
             meta: {
@@ -99,16 +119,16 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
             },
             fields: [
               { name: 'time', type: FieldType.time },
-              { name: 'message', type: FieldType.string, labels: { app: line._app || '' } },
+              { name: 'message', type: FieldType.string, labels: { app: userData.kubernetes?.labels?.app|| '' } },
               { name: 'level', type: FieldType.string },
               { name: 'content', type: FieldType.string },
               { name: 'app', type: FieldType.string }
             ],
           });
-          frame.add({time: line._ts, level: line.level, message: line.message || line.msg || line._line, app: line._app, content: line._line, labels: { app: line._app } })
+          frame.add({time: userData.time, level: userData.level, message: userData.message || userData.msg || line.user_data, app: userData.kubernetes?.labels?.app, content: line.user_data, labels: { app: userData.kubernetes?.labels?.app} })
           frames.push(frame);
         });
-      */ })
+      })
     });
     return Promise.all(promises).then(() => ({ data: frames }));
   }
