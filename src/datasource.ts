@@ -15,8 +15,8 @@ import {
   DataQueryResponse,
   DataSourceApi,
   DataSourceInstanceSettings,
-  MutableDataFrame,
-  FieldType,
+//  MutableDataFrame,
+//  FieldType,
 } from '@grafana/data';
 
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
@@ -33,10 +33,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     this.url = instanceSettings.url;
   }
 
-  async doRequest(path: any, params?: any) {
+  async doRequest(path: any, params?: any, method = 'POST') {
     const req = {
-      method: "GET",
-      url: this.url + "/example" + path,
+      method,
+      url: this.url + "/logs" + path,
       params
     }
     const result = await getBackendSrv().datasourceRequest(req);
@@ -45,15 +45,27 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     const { range } = options;
-    const from = range!.from.valueOf();
-    const to = range!.to.valueOf();
+    const start_date = range!.from.valueOf();
+    const end_date = range!.to.valueOf();
+
+    const metadata = {
+      start_date,
+      end_date,
+      limit: 1000,
+      tier: "frequent_search",
+      strict_fields_validation: false,
+      syntax: "lucene"
+    }
 
     const frames: any = [];
 
     const promises = options.targets.map((target) => {
         const query = getTemplateSrv().replace(target.queryText, options.scopedVars);
-        return this.doRequest('/v2/export', {from, to, size: 1000, query }).then((response) => {
-        response.data?.lines?.forEach((line: any) => {
+        console.log(query, metadata);
+
+        return this.doRequest('/v1/query', {query, metadata }).then((response) => {
+          console.log(response);
+/*         response.data?.lines?.forEach((line: any) => {
           const frame = new MutableDataFrame({
             refId: target.refId,
             meta: {
@@ -70,14 +82,14 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           frame.add({time: line._ts, level: line.level, message: line.message || line.msg || line._line, app: line._app, content: line._line, labels: { app: line._app } })
           frames.push(frame);
         });
-      })
+      */ })
     });
     return Promise.all(promises).then(() => ({ data: frames }));
   }
 
   async testDatasource() {
     // Implement a health check for your data source.
-    const response = await this.doRequest('/v1/config/ingestion/status')
+    const response = await this.doRequest('/v1/data_usage', {}, 'GET')
     const status = (response.status === 200) ? 'ok': 'error'
 
     return {

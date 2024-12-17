@@ -1,5 +1,9 @@
 #!/bin/bash
 
+if [[ -e "env.sh" ]]; then
+    source env.sh
+fi
+
 if [[ -z "$GRAFANA_ACCESS_POLICY_TOKEN" ]]; then
     echo "Missing \$GRAFANA_ACCESS_POLICY_TOKEN, please export token"
     exit 1
