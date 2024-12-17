@@ -43,10 +43,36 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     return result;
   }
 
+  async doStream(path: any, params?: any) {
+    const url = this.url + "/logs" + path;
+    const response = await fetch(url, {
+      method: "POST",
+      cache: "no-cache",
+      keepalive: true,
+      headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream",
+      },
+      body: JSON.stringify(params)
+    });
+
+    const reader = response?.body?.getReader();
+    if (reader == null) {
+      return;
+    }
+
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) {break;}
+
+      console.log('get.message', new TextDecoder().decode(value));
+    }
+  }
+
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
     const { range } = options;
-    const start_date = range!.from.valueOf();
-    const end_date = range!.to.valueOf();
+    const start_date = new Date(range!.from.valueOf()).toISOString();
+    const end_date = new Date(range!.to.valueOf()).toISOString();
 
     const metadata = {
       start_date,
@@ -63,7 +89,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         const query = getTemplateSrv().replace(target.queryText, options.scopedVars);
         console.log(query, metadata);
 
-        return this.doRequest('/v1/query', {query, metadata }).then((response) => {
+        return this.doStream('/v1/query', {query, metadata }).then((response) => {
           console.log(response);
 /*         response.data?.lines?.forEach((line: any) => {
           const frame = new MutableDataFrame({
