@@ -103,7 +103,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         return this.doStream('/v1/query', {query, metadata }).then((response) => {
           if (response == null) { return; }
           response.forEach((line: any) => {
-          const userData = JSON.parse(line.user_data)
+          let userData = JSON.parse(line.user_data)
+          if (userData.text) {
+            userData = JSON.parse(userData.text)
+          }
           const frame = new MutableDataFrame({
             refId: target.refId,
             meta: {
