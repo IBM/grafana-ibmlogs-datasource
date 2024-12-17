@@ -42,15 +42,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       url: this.url + "/logs" + path,
       params
     }
-    console.error('created a request');
     const result = await getBackendSrv().datasourceRequest(req);
     return result;
   }
 
   async doStream(path: any, params?: any) {
     const url = this.url + "/logs" + path;
-    console.error(`{url} {params}`);
-    console.error(url, params);
     const response = await fetch(url, {
       method: "POST",
       cache: "no-cache",
@@ -70,9 +67,6 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const dataFrames: any[] = [];
 
     function onEvent(event: EventSourceMessage) {
-      console.log('Received event!')
-      console.log('id: %s', event.id || '<none>')
-      console.log('data: %s', event.data)
       const data = JSON.parse(event.data);
       data.result?.results?.forEach((result: any) => {
         dataFrames.push(result);
@@ -105,10 +99,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     const promises = options.targets.map((target) => {
         const query = getTemplateSrv().replace(target.queryText, options.scopedVars);
-        console.log(query, metadata);
 
         return this.doStream('/v1/query', {query, metadata }).then((response) => {
-          console.error(response);
           if (response == null) { return; }
           response.forEach((line: any) => {
           const userData = JSON.parse(line.user_data)
