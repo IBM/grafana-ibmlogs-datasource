@@ -16,13 +16,13 @@ fi
 
 set -xe
 
-rm -rf dist sdague-mezmo-datasource
+rm -rf dist sdague-ibmlogs-datasource
 
 npm run build
 npx @grafana/sign-plugin@latest --rootUrls $ROOT_URL
-cp -a dist/ sdague-mezmo-datasource/
+cp -a dist/ sdague-ibmlogs-datasource/
 
 VERSION=$(cat package.json | jq '.version' -r)
 
-zip sdague-mezmo-datasource-$VERSION.zip sdague-mezmo-datasource -r
-sha1sum sdague-mezmo-datasource-$VERSION.zip > sdague-mezmo-datasource-$VERSION.zip.sha1
+zip sdague-ibmlogs-datasource-$VERSION.zip sdague-ibmlogs-datasource -r
+sha1sum sdague-ibmlogs-datasource-$VERSION.zip > sdague-ibmlogs-datasource-$VERSION.zip.sha1

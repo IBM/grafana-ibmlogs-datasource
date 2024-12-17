@@ -1,7 +1,7 @@
 {
-  "name": "mezmo-datasource",
-  "version": "1.0.3",
-  "description": "Datasource for the mezmo log service",
+  "name": "ibmlogs-datasource",
+  "version": "1.0.0",
+  "description": "Datasource for the IBM logs service",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",

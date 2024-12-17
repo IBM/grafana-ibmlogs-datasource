@@ -1,11 +1,10 @@
-# Mezmo Datasource Plugin for Grafana
+# IBM Logs Datasource Plugin for Grafana
 
-This datasource provides access to Mezmo (LogDNA) logs in grafana
-panels. You can build and install it yourself in your
-environment. Grafana does not accept contributions of plugins to their
-registry that talk to commercial services, unless you pay for a
-commercial grafana.com subscription, which is why this is not in the
-main grafana registry.
+This datasource provides access to IBM logs in grafana panels. You can
+build and install it yourself in your environment. Grafana does not
+accept contributions of plugins to their registry that talk to
+commercial services, unless you pay for a commercial grafana.com
+subscription, which is why this is not in the main grafana registry.
 
 ## Getting started
 
@@ -61,11 +60,11 @@ With signing key in hand, do the following:
 rm -rf dist
 npm run build
 GRAFANA_ACCESS_POLICY_TOKEN=XXXX npx @grafana/sign-plugin@latest --rootUrls URL_OF_YOUR_INSTALLATION
-cp -a dist/ sdague-mezmo-datasource/
+cp -a dist/ sdague-ibmlogs-datasource/
 
 VERSION=$(cat package.json | jq '.version' -r)
 
-zip sdague-mezmo-datasource-$VERSION.zip sdague-mezmo-datasource -r
+zip sdague-ibmlogs-datasource-$VERSION.zip sdague-ibmlogs-datasource -r
 ```
 
 This is now ready for installation.

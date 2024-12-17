@@ -1,12 +1,12 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Mezmo Datasource",
-  "id": "sdague-mezmo-datasource",
+  "name": "IBM Logs Datasource",
+  "id": "sdague-ibmlogs-datasource",
   "metrics": true,
   "logs": true,
   "info": {
-    "description": "Datasource for the mezmo log service",
+    "description": "Datasource for the IBM logs service",
     "author": {
       "name": "Sdague"
     },
