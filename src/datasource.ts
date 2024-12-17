@@ -120,7 +120,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               { name: 'app', type: FieldType.string }
             ],
           });
-          frame.add({time: userData.time, level: userData.level, message: userData.message || userData.msg || line.user_data, app: userData.kubernetes?.labels?.app, content: line.user_data, labels: { app: userData.kubernetes?.labels?.app} })
+          frame.add({time: userData.time, level: userData.level, message: userData.message || userData.msg || userData.log || line.user_data, app: userData.kubernetes?.labels?.app, content: line.user_data, labels: { app: userData.kubernetes?.labels?.app} })
           frames.push(frame);
         });
       })
