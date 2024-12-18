@@ -28,6 +28,8 @@ ci/
 e2e-results/
 **/cypress/videos
 **/cypress/report.json
+env.sh
+provisioning/datasources/datasource.yaml
 
 # Editor
 .idea
