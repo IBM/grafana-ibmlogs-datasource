@@ -29,9 +29,12 @@ e2e-results/
 **/cypress/videos
 **/cypress/report.json
 env.sh
+test.sh
 provisioning/datasources/datasource.yaml
 
 # Editor
 .idea
 
 .eslintcache
+
+sdague-ibmlogs-datasource*
