@@ -99,6 +99,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     const promises = options.targets.map((target) => {
         const query = getTemplateSrv().replace(target.queryText, options.scopedVars);
+        metadata.limit = target.limit;
 
         return this.doStream('/v1/query', {query, metadata }).then((response) => {
           if (response == null) { return; }
