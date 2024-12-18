@@ -112,3 +112,16 @@ to take effect.
 ```bash
 docker compose down
 ```
+
+## Useful Documentation
+
+The following documentation is useful in expanding the plugin.
+
+- [Query API for IBM Cloud Logs](https://cloud.ibm.com/apidocs/logs-service-api#query)
+- [EventSource
+  Parser](https://www.npmjs.com/package/eventsource-parser) - the
+  Response from the Query API is undocumented SSE stream. That
+  requires fetching the raw data stream, then running it through
+  eventsource-parser to get meaningful data.
+- [Connecting to OAuth2 sources in Grafana](https://grafana.com/developers/plugin-tools/how-to-guides/data-source-plugins/add-authentication-for-data-source-plugins#add-an-oauth-20-proxy-route-to-your-plugin) - how to securely do this in grafana so you don't need to write your own OAuth stack. Grafana then does token validation and caching.
+- [Building a Logs Data Plugin](https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin) - there are some best practices here this isn't yet doing, worth converting at some point
