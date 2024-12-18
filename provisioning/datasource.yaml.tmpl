@@ -1,0 +1,12 @@
+# To accelerate testing, copy this file to datasources.yaml and
+#  replace the variables in here. This will speed up dev cycle
+
+apiVersion: 1
+
+datasources:
+    - name: ibmlogs-test
+      type: sdague-ibmlogs-datasource
+      jsonData:
+        endpoint: ${ENDPOINT FOR LOGS API}
+      secureJsonData:
+        apiKey: ${IBM CLOUD API KEY}
