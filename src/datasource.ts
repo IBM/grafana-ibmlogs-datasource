@@ -19,7 +19,7 @@ import {
   FieldType,
 } from '@grafana/data';
 
-import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { getTemplateSrv } from '@grafana/runtime';
 
 import { MyQuery, MyDataSourceOptions } from './types';
 
@@ -37,12 +37,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async doRequest(path: any, params?: any, method = 'POST') {
+    const url = this.url + "/logs" + path;
     const req = {
       method,
-      url: this.url + "/logs" + path,
       params
     }
-    const result = await getBackendSrv().datasourceRequest(req);
+    const result = await fetch(url, req);
     return result;
   }
 
@@ -89,7 +89,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const metadata = {
       start_date,
       end_date,
-      limit: 1000,
+      limit: 10000,
       tier: "frequent_search",
       strict_fields_validation: false,
       syntax: "lucene"
@@ -135,7 +135,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     return {
       status,
-      message: response.data.isIngesting
+      message: response.json()
     };
   }
 }
