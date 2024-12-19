@@ -89,9 +89,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const metadata = {
       start_date,
       end_date,
-      limit: 10000,
       tier: "frequent_search",
-      strict_fields_validation: false,
       syntax: "lucene"
     }
 
