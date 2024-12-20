@@ -14,6 +14,7 @@ jobs:
       # usage of GRAFANA_API_KEY is deprecated
       # GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
+      ROOT_URL: ${{ secrets.ROOT_URL }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup Node.js environment
