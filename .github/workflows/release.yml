@@ -9,6 +9,9 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+      discussions: write
     runs-on: ubuntu-latest
     env:
       # usage of GRAFANA_API_KEY is deprecated
@@ -92,9 +95,6 @@ jobs:
       - name: Create Github release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
-        permissions:
-          contents: write
-          discussions: write
         with:
           draft: true
           generate_release_notes: true
