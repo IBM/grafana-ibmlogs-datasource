@@ -96,7 +96,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
-          body_path: release_nodes.md
+          body_path: release_notes.md
           files: |
             ./${{ steps.metadata.outputs.archive }}
             ./${{ steps.metadata.outputs.archive-checksum }}
