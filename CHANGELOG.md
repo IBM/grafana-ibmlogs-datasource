@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2
+
+### Changes
+
+- Automate release to include release notes
+
 ## 2.0.1
 
 ### Changes
