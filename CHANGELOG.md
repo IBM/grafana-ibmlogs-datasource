@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.0
+
+### Changes
+
+- Fix timestamp parsing
+- Make level parsing functional
+
 ## 2.0.2
 
 ### Changes
