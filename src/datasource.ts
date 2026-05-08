@@ -217,7 +217,6 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
           frames.push(frame);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`Query failed for target ${target.refId}:`, error);
           // Continue processing other targets instead of failing entire query
         }
