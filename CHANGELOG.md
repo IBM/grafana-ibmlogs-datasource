@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+### Changes
+
+- Add comprehensive error handling to datasource
+- Automate release tagging from package.json version bump
+- Update dependencies and bump node version
+- Update GitHub Actions to current versions
+
 ## 2.1.0
 
 ### Changes
