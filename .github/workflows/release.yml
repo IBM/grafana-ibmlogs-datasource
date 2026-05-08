@@ -2,22 +2,63 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*' # Run workflow on version tags, e.g. v1.0.0.
+    branches:
+      - main
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Check for new version
+        id: check
+        run: |
+          VERSION=$(jq -r .version package.json)
+          TAG="v${VERSION}"
+          if git tag -l "$TAG" | grep -q "$TAG"; then
+            echo "Tag $TAG already exists, skipping release"
+            echo "release=false" >> $GITHUB_OUTPUT
+          else
+            echo "New version detected: $VERSION"
+            echo "release=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: steps.check.outputs.release == 'true'
+        run: |
+          TAG="v${{ steps.check.outputs.version }}"
+          git tag "$TAG"
+          git push origin "$TAG" || echo "Tag already pushed by another run, skipping"
+
   release:
+    needs: check-version
+    if: needs.check-version.outputs.release == 'true'
     permissions:
       contents: write
       discussions: write
     runs-on: ubuntu-latest
     env:
-      # usage of GRAFANA_API_KEY is deprecated
-      # GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }}
       GRAFANA_ACCESS_POLICY_TOKEN: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
       ROOT_URL: ${{ secrets.ROOT_URL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.check-version.outputs.version }}
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -63,16 +104,13 @@ jobs:
           echo "archive=${GRAFANA_PLUGIN_ARTIFACT}" >> $GITHUB_OUTPUT
           echo "archive-checksum=${GRAFANA_PLUGIN_ARTIFACT_CHECKSUM}" >> $GITHUB_OUTPUT
 
-          echo "github-tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          echo "github-tag=v${{ needs.check-version.outputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Read changelog
         id: changelog
         run: |
           awk '/^## / {s++} s == 1 {print}' CHANGELOG.md > release_notes.md
           echo "path=release_notes.md" >> $GITHUB_OUTPUT
-
-      # - name: Check package version
-      #   run: if [ "v${{ steps.metadata.outputs.plugin-version }}" != "${{ steps.metadata.outputs.github-tag }}" ]; then printf "\033[0;31mPlugin version doesn't match tag name\033[0m\n"; exit 1; fi
 
       - name: Package plugin
         id: package-plugin
@@ -92,8 +130,8 @@ jobs:
 
       - name: Create Github release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: v${{ needs.check-version.outputs.version }}
           draft: false
           generate_release_notes: true
           body_path: release_notes.md
