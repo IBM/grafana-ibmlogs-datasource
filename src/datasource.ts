@@ -21,7 +21,7 @@ import {
 
 import { getTemplateSrv } from '@grafana/runtime';
 
-import { MyQuery, MyDataSourceOptions } from './types';
+import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY } from './types';
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
 
@@ -142,13 +142,6 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
       const start_date = new Date(range.from.valueOf()).toISOString();
       const end_date = new Date(range.to.valueOf()).toISOString();
-      const metadata = {
-        start_date,
-        end_date,
-        limit: 1000,
-        tier: 'frequent_search',
-        syntax: 'lucene',
-      };
 
       const frames: any = [];
 
@@ -160,7 +153,13 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           }
 
           const query = getTemplateSrv().replace(target.queryText, options.scopedVars);
-          metadata.limit = target.limit;
+          const metadata = {
+            start_date,
+            end_date,
+            limit: target.limit,
+            tier: target.tier || DEFAULT_QUERY.tier,
+            syntax: 'lucene',
+          };
 
           const response = await this.doStream('/v1/query', { query, metadata });
 

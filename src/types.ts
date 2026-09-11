@@ -1,12 +1,16 @@
 import { DataQuery, DataSourceJsonData } from '@grafana/data';
 
+export type LogsTier = 'unspecified' | 'frequent_search' | 'archive';
+
 export interface MyQuery extends DataQuery {
   queryText?: string;
   limit: number;
+  tier?: LogsTier;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
   limit: 1000,
+  tier: 'frequent_search',
 };
 
 /**
