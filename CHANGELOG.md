@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.3.0
+
+### Changes
+
+- Fix "Save & test" failing with a fetch error: GET requests to the
+  IBM Logs health check were incorrectly sent with a request body,
+  which browsers reject for GET/HEAD methods
+- Fix authentication failures (401/403) reporting a generic connection
+  error instead of the intended "Authentication failed" message
+- Add unit test coverage for the datasource connection test path
+- Migrate to Grafana 13.2.1 and React 19 to resolve all `npm audit`
+  vulnerabilities (previously 16, including 7 high severity); minimum
+  supported Grafana version is now 11.0.0
+- Replace the unmaintained Cypress end-to-end setup with Playwright
+
 ## 2.2.0
 
 ### Changes
