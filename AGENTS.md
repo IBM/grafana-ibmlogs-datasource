@@ -7,8 +7,8 @@ A Grafana datasource plugin that connects Grafana to the IBM Cloud Logs service.
 - **Plugin ID**: `sdague-ibmlogs-datasource`
 - **Type**: Frontend-only Grafana datasource plugin (no backend binary)
 - **Language**: TypeScript + React
-- **Grafana SDK version**: 10.4.x
-- **Minimum Grafana**: 9.5.3
+- **Grafana SDK version**: 13.2.x
+- **Minimum Grafana**: 11.0.0
 
 ## Architecture
 
@@ -41,7 +41,7 @@ src/
 
 ### Prerequisites
 
-- Node.js >= 16 (see `.nvmrc`)
+- Node.js >= 20 (see `.nvmrc`)
 - npm 9.2.0
 - Docker (for local Grafana instance)
 
@@ -66,7 +66,7 @@ The docker-compose mounts `dist/` into the Grafana container and enables anonymo
 | `npm run lint:fix` | ESLint with auto-fix |
 | `npm run test` | Jest watch mode (changed files only) |
 | `npm run test:ci` | Jest full run (4 workers, passWithNoTests) |
-| `npm run e2e` | Cypress E2E tests |
+| `npm run e2e` | Playwright E2E tests (`@grafana/plugin-e2e`) |
 | `npm run server` | Docker-compose Grafana |
 
 ### Before Committing
@@ -109,13 +109,22 @@ This produces `sdague-ibmlogs-datasource-<version>.zip`.
 
 ## CI/CD
 
-- **CI** (`.github/workflows/ci.yml`): Runs on push/PR to main. Checks types, lints, tests, builds. Runs Cypress E2E if `cypress/` exists.
+- **CI** (`.github/workflows/ci.yml`): Runs on push/PR to main. Checks types, lints, tests, builds, then runs Playwright E2E against a docker-composed Grafana instance.
 - **Release** (`.github/workflows/release.yml`): Triggered by `v*` tags. Builds, signs, validates, publishes GitHub release.
 - **Compatibility** (`.github/workflows/is-compatible.yml`): Checks Grafana API compatibility on PRs using `@grafana/levitate`.
 
 ## Configuration Files
 
 Build tooling lives in `.config/` (scaffolded by `@grafana/create-plugin`). Root config files (`tsconfig.json`, `jest.config.js`, `.eslintrc`) extend from `.config/`. Don't edit `.config/` directly unless you understand the scaffolding system.
+
+### `react-router` override
+
+`package.json` pins `react-router` to `7.18.3` inside `react-router-dom-v5-compat` via
+`overrides`. `@grafana/ui` depends on `react-router-dom-v5-compat`, which itself depends on a
+vulnerable `react-router@6.x` (GHSA-wrjc-x8rr-h8h6, GHSA-337j-9hxr-rhxg) and will never move to
+`react-router@7.x` since it exists solely as a v5→v6 compatibility shim. Do not remove this
+override — doing so silently reintroduces those CVEs into `npm audit`. `react-router` is also
+externalized in the webpack build, so it never ships in `dist/module.js` regardless.
 
 ## Testing
 
