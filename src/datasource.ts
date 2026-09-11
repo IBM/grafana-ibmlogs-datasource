@@ -42,12 +42,13 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
 
       const url = this.url + '/logs' + path;
+      const hasBody = method !== 'GET' && method !== 'HEAD' && params !== undefined;
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: params ? JSON.stringify(params) : undefined,
+        body: hasBody ? JSON.stringify(params) : undefined,
       });
 
       if (!response.ok) {
@@ -252,29 +253,22 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
 
       // Test connection
-      const response = await this.doRequest('/v1/data_usage', {}, 'GET');
+      await this.doRequest('/v1/data_usage', {}, 'GET');
 
-      if (response.status === 200) {
-        return {
-          status: 'ok',
-          message: 'Successfully connected to IBM Logs service',
-        };
-      }
+      return {
+        status: 'ok',
+        message: 'Successfully connected to IBM Logs service',
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
-      if (response.status === 401 || response.status === 403) {
+      if (errorMessage.includes('HTTP 401') || errorMessage.includes('HTTP 403')) {
         return {
           status: 'error',
           message: 'Authentication failed. Please check your API key.',
         };
       }
 
-      const errorText = await response.text().catch(() => 'Unknown error');
-      return {
-        status: 'error',
-        message: `Connection failed (HTTP ${response.status}): ${errorText}`,
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         status: 'error',
         message: `Connection error: ${errorMessage}`,
