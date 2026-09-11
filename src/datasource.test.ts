@@ -7,7 +7,7 @@ jest.mock('@grafana/runtime', () => ({
 }));
 
 import { DataSource } from './datasource';
-import { MyDataSourceOptions } from './types';
+import { MyDataSourceOptions, MyQuery } from './types';
 
 function createDataSource(url = 'http://localhost/api/datasources/proxy/1') {
   const instanceSettings: DataSourceInstanceSettings<MyDataSourceOptions> = {
@@ -63,6 +63,50 @@ describe('DataSource', () => {
 
       expect(result.status).toBe('error');
       expect(result.message).toMatch(/URL is not configured/);
+    });
+  });
+
+  describe('query', () => {
+    function makeTarget(overrides: Partial<MyQuery>): MyQuery {
+      return { refId: 'A', queryText: 'message: test', limit: 100, ...overrides };
+    }
+
+    it('sends each target its own limit and tier without cross-contamination', async () => {
+      const ds = createDataSource();
+      const calls: any[] = [];
+      jest.spyOn(ds, 'doStream').mockImplementation(async (_path, params) => {
+        calls.push(params.metadata);
+        return [];
+      });
+
+      await ds.query({
+        targets: [
+          makeTarget({ refId: 'A', limit: 100, tier: 'archive' }),
+          makeTarget({ refId: 'B', limit: 500, tier: 'unspecified' }),
+        ],
+        range: { from: { valueOf: () => 0 }, to: { valueOf: () => 1000 } },
+      } as any);
+
+      const byRefId = Object.fromEntries(calls.map((m) => [m.limit, m]));
+      expect(calls).toHaveLength(2);
+      expect(byRefId[100].tier).toBe('archive');
+      expect(byRefId[500].tier).toBe('unspecified');
+    });
+
+    it('defaults tier to frequent_search when not set on the target', async () => {
+      const ds = createDataSource();
+      let capturedMetadata: any;
+      jest.spyOn(ds, 'doStream').mockImplementation(async (_path, params) => {
+        capturedMetadata = params.metadata;
+        return [];
+      });
+
+      await ds.query({
+        targets: [makeTarget({ tier: undefined })],
+        range: { from: { valueOf: () => 0 }, to: { valueOf: () => 1000 } },
+      } as any);
+
+      expect(capturedMetadata.tier).toBe('frequent_search');
     });
   });
 });

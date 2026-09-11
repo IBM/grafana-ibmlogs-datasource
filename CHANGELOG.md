@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.0
+
+### Changes
+
+- Make the log search tier (priority insights vs. archive) configurable
+  per query via a new dropdown in the query editor, instead of always
+  searching the `frequent_search` tier. Existing saved queries are
+  unaffected and continue to default to `frequent_search`
+- Fix a bug where concurrent queries with multiple targets in the same
+  panel could have their `limit` values cross-contaminated
+
 ## 2.3.0
 
 ### Changes
