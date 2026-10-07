@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.1
+
+### Changes
+
+- Remove the vulnerable `sprintf-js` (CVE-2026-97058) from the dev
+  dependency tree by moving jest's coverage config loader onto
+  `js-yaml` 4
+- Update dependencies: `brace-expansion`, `dompurify` 3.4.16,
+  `fast-uri` 3.1.8, `moment` 2.31.0, `serialize-javascript` 7.1.2,
+  `source-map-js` 1.2.2
+- Add an explicit permissions block to the compatibility check workflow
+
 ## 2.4.0
 
 ### Changes
