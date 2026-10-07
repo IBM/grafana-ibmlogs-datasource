@@ -67,6 +67,9 @@
     "tslib": "2.5.3"
   },
   "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.1.0"
+    },
     "react-router-dom-v5-compat": {
       "react-router": "7.18.3"
     }

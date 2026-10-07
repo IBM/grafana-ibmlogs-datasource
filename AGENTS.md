@@ -126,6 +126,14 @@ vulnerable `react-router@6.x` (GHSA-wrjc-x8rr-h8h6, GHSA-337j-9hxr-rhxg) and wil
 override — doing so silently reintroduces those CVEs into `npm audit`. `react-router` is also
 externalized in the webpack build, so it never ships in `dist/module.js` regardless.
 
+### `js-yaml` override
+
+`package.json` forces `@istanbuljs/load-nyc-config` (pulled in by jest's coverage tooling) onto
+`js-yaml@^4` instead of `js-yaml@3`. `js-yaml@3` depends on `argparse@1`, which depends on
+`sprintf-js` (GHSA-hp3w-g68c-fv3c), and `sprintf-js` has no patched release. load-nyc-config only
+calls `yaml.load()`, which is API-compatible in v4. Do not remove this override while
+`sprintf-js` remains unpatched.
+
 ## Testing
 
 Tests go in `src/**/*.test.ts` or `src/**/__tests__/`. The test environment is jsdom. CSS imports are mocked with `identity-obj-proxy`.
