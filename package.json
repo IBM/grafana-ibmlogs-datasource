@@ -1,6 +1,6 @@
 {
   "name": "ibmlogs-datasource",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Datasource for the IBM logs service",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -67,6 +67,9 @@
     "tslib": "2.5.3"
   },
   "overrides": {
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^4.1.0"
+    },
     "react-router-dom-v5-compat": {
       "react-router": "7.18.3"
     }
