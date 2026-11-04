@@ -82,10 +82,13 @@ jobs:
         with:
           ref: v${{ needs.check-version.outputs.version }}
 
+      # Not node-version-file: this job checks out the release tag, whose .nvmrc may
+      # predate a toolchain bump (e.g. retrying v2.5.0, tagged with .nvmrc=20).
+      # Keep in sync with .nvmrc.
       - name: Setup Node.js environment
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Setup Go environment
@@ -105,9 +108,9 @@ jobs:
           echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN == '' }}
 
-      # Pinned: sign-plugin 4.x requires Node >= 24.5, and @latest silently broke releases
+      # sign-plugin 4.x requires Node >= 24.5
       - name: Sign plugin
-        run: npx @grafana/sign-plugin@3.3.3 --rootUrls "$ROOT_URL"
+        run: npx @grafana/sign-plugin@latest --rootUrls "$ROOT_URL"
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
 
       - name: Get plugin metadata

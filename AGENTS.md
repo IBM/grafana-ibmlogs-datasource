@@ -41,8 +41,8 @@ src/
 
 ### Prerequisites
 
-- Node.js >= 20 (see `.nvmrc`)
-- npm 9.2.0
+- Node.js >= 24.5 (see `.nvmrc`)
+- npm 11 (bundled with Node 24)
 - Docker (for local Grafana instance)
 
 ### Setup
@@ -112,7 +112,7 @@ If a release run fails partway (the tag is pushed before signing and publishing)
 
 The workflow only releases when GitHub definitively reports no release for the version, so a draft release for `vX.Y.Z` will also block it.
 
-`@grafana/sign-plugin` is pinned to an exact version in the workflow, `build.sh`, `local-build.sh`, and the `sign` npm script. 4.x requires Node >= 24.5 while the workflows use Node 22, so move both together.
+`@grafana/sign-plugin` (run via `npx ...@latest`) requires Node >= 24.5. CI and the compatibility check read the Node version from `.nvmrc`. The release job sets it explicitly, because it builds from the release tag and that tag's `.nvmrc` may be older, so bump both together.
 
 **Required secrets**: `GRAFANA_ACCESS_POLICY_TOKEN`, `ROOT_URL`
 
