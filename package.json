@@ -12,7 +12,7 @@
     "lint:fix": "npm run lint -- --fix",
     "e2e": "playwright test",
     "server": "docker-compose up --build",
-    "sign": "npx --yes @grafana/sign-plugin@latest --rootUrls $ROOT_URL"
+    "sign": "npx --yes @grafana/sign-plugin@3.3.3 --rootUrls $ROOT_URL"
   },
   "author": "Sdague",
   "license": "Apache-2.0",

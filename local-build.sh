@@ -14,7 +14,7 @@ set -xe
 rm -rf dist sdague-ibmlogs-datasource
 
 npm run build
-npx @grafana/sign-plugin@latest --rootUrls http://localhost:3000
+npx @grafana/sign-plugin@3.3.3 --rootUrls http://localhost:3000
 cp -a dist/ sdague-ibmlogs-datasource/
 
 VERSION=$(cat package.json | jq '.version' -r)

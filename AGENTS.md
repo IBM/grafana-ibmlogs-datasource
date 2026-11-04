@@ -82,6 +82,19 @@ npm run build
 
 CI runs these same checks on push/PR to main.
 
+### DCO sign-off
+
+Every commit must carry a Developer Certificate of Origin sign-off (a
+`Signed-off-by:` trailer); the DCO check on pull requests enforces this.
+Always commit with `-s`:
+
+```bash
+git commit -s -m "..."
+```
+
+To fix commits that are missing it, use `git commit --amend -s --no-edit`
+for the last commit, or `git rebase --signoff main` for a whole branch.
+
 ## Release Process
 
 Releases are automated via GitHub Actions (`.github/workflows/release.yml`). To release:
@@ -90,7 +103,16 @@ Releases are automated via GitHub Actions (`.github/workflows/release.yml`). To 
 2. Update `CHANGELOG.md` with a new `## X.Y.Z` section
 3. Commit and push to main
 
-The workflow automatically detects the version bump, creates the `vX.Y.Z` git tag, then builds, signs, validates, and publishes a GitHub release with the signed zip and MD5 checksum.
+The workflow automatically detects the version bump (no GitHub release yet for `vX.Y.Z`), creates the `vX.Y.Z` git tag, then builds, signs, validates, and publishes a GitHub release with the signed zip and MD5 checksum.
+
+If a release run fails partway (the tag is pushed before signing and publishing), what to do depends on where the cause is:
+
+- **Workflow or tooling problem** (e.g. a signing tool change): fix `release.yml` on main and re-run the **Release** workflow via `workflow_dispatch` (merging the fix to main also triggers it). It reuses the existing tag and builds from that tagged commit. Don't delete the tag.
+- **Problem in the plugin itself** (e.g. the validator rejects something in `src/` or `plugin.json`): retrying would rebuild the same broken tagged code. Fix it and bump the version instead.
+
+The workflow only releases when GitHub definitively reports no release for the version, so a draft release for `vX.Y.Z` will also block it.
+
+`@grafana/sign-plugin` is pinned to an exact version in the workflow, `build.sh`, `local-build.sh`, and the `sign` npm script. 4.x requires Node >= 24.5 while the workflows use Node 22, so move both together.
 
 **Required secrets**: `GRAFANA_ACCESS_POLICY_TOKEN`, `ROOT_URL`
 
@@ -110,7 +132,7 @@ This produces `sdague-ibmlogs-datasource-<version>.zip`.
 ## CI/CD
 
 - **CI** (`.github/workflows/ci.yml`): Runs on push/PR to main. Checks types, lints, tests, builds, then runs Playwright E2E against a docker-composed Grafana instance.
-- **Release** (`.github/workflows/release.yml`): Triggered by `v*` tags. Builds, signs, validates, publishes GitHub release.
+- **Release** (`.github/workflows/release.yml`): Runs on push to main and `workflow_dispatch`. When `package.json` has a version with no GitHub release yet, tags it, then builds, signs, validates, and publishes the release.
 - **Compatibility** (`.github/workflows/is-compatible.yml`): Checks Grafana API compatibility on PRs using `@grafana/levitate`.
 
 ## Configuration Files
