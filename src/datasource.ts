@@ -11,6 +11,7 @@
  */
 
 import {
+  DataQueryError,
   DataQueryRequest,
   DataQueryResponse,
   DataSourceApi,
@@ -21,9 +22,46 @@ import {
 
 import { getTemplateSrv } from '@grafana/runtime';
 
-import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY } from './types';
+import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, normalizeSyntax } from './types';
 
 import { createParser, type EventSourceMessage } from 'eventsource-parser';
+
+const MAX_ERROR_DETAIL = 500;
+
+/**
+ * Best-effort read of an error response body so API messages (e.g. query parse errors) reach the user.
+ * IBM Cloud Logs returns `{"errors":[{"code":..., "message":...}], ...}`; prefer those messages over raw JSON.
+ */
+async function errorDetail(response: Response): Promise<string> {
+  let text: string;
+  try {
+    text = (await response.text()).trim();
+  } catch {
+    return '';
+  }
+  if (!text) {
+    return '';
+  }
+  try {
+    const messages = (JSON.parse(text)?.errors ?? [])
+      .map((e: any) => e?.message)
+      .filter((m: unknown): m is string => typeof m === 'string' && m.length > 0);
+    if (messages.length > 0) {
+      return ` - ${messages.join('; ')}`;
+    }
+  } catch {
+    // not JSON; fall through to the raw body
+  }
+  return ` - ${text.slice(0, MAX_ERROR_DETAIL)}`;
+}
+
+function streamErrorMessage(error: unknown): string {
+  if (typeof error === 'string') {
+    return error;
+  }
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === 'string' && message ? message : JSON.stringify(error);
+}
 
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   endpoint: string;
@@ -82,7 +120,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}${await errorDetail(response)}`
+        );
       }
 
       const reader = response.body?.getReader();
@@ -91,16 +131,24 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
 
       const dataFrames: any[] = [];
+      // The API can report query failures (e.g. a DataPrime parse error) as an
+      // `error` item inside an HTTP 200 stream, so collect those as well
+      const streamErrors: string[] = [];
 
       function onEvent(event: EventSourceMessage) {
+        let data: any;
         try {
-          const data = JSON.parse(event.data);
-          data.result?.results?.forEach((result: any) => {
-            dataFrames.push(result);
-          });
+          data = JSON.parse(event.data);
         } catch (error) {
           console.warn('Failed to parse event data:', error);
+          return;
         }
+        if (data?.error) {
+          streamErrors.push(streamErrorMessage(data.error));
+        }
+        data?.result?.results?.forEach((result: any) => {
+          dataFrames.push(result);
+        });
       }
 
       const parser = createParser({ onEvent });
@@ -119,6 +167,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         }
       } finally {
         reader.releaseLock();
+      }
+
+      if (streamErrors.length > 0) {
+        throw new Error(streamErrors.join('; '));
       }
 
       return dataFrames;
@@ -144,6 +196,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       const end_date = new Date(range.to.valueOf()).toISOString();
 
       const frames: any = [];
+      const errors: DataQueryError[] = [];
 
       const promises = options.targets.map(async (target) => {
         try {
@@ -158,7 +211,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
             end_date,
             limit: target.limit,
             tier: target.tier || DEFAULT_QUERY.tier,
-            syntax: 'lucene',
+            syntax: normalizeSyntax(target.syntax),
           };
 
           const response = await this.doStream('/v1/query', { query, metadata });
@@ -218,12 +271,17 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           frames.push(frame);
         } catch (error) {
           console.error(`Query failed for target ${target.refId}:`, error);
-          // Continue processing other targets instead of failing entire query
+          // Continue processing other targets instead of failing entire query,
+          // but surface the failure on the panel instead of silently showing no data
+          errors.push({
+            refId: target.refId,
+            message: error instanceof Error ? error.message : String(error),
+          });
         }
       });
 
       await Promise.all(promises);
-      return { data: frames };
+      return errors.length > 0 ? { data: frames, errors } : { data: frames };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Query execution failed:', error);
