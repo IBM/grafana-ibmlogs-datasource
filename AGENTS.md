@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A Grafana datasource plugin that connects Grafana to the IBM Cloud Logs service. Users configure an IBM Cloud Logs endpoint and API key, then query logs using Lucene syntax. Results are displayed in Grafana's log panel.
+A Grafana datasource plugin that connects Grafana to the IBM Cloud Logs service. Users configure an IBM Cloud Logs endpoint and API key, then query logs using Lucene or DataPrime syntax. Results are displayed in Grafana's log panel.
 
 - **Plugin ID**: `sdague-ibmlogs-datasource`
 - **Type**: Frontend-only Grafana datasource plugin (no backend binary)
@@ -19,7 +19,7 @@ src/
 ├── types.ts           # TypeScript interfaces (MyQuery, MyDataSourceOptions, MySecureJsonData)
 └── components/
     ├── ConfigEditor.tsx   # Settings UI: endpoint URL + API key
-    └── QueryEditor.tsx    # Query UI: Lucene query text + result limit
+    └── QueryEditor.tsx    # Query UI: query text, syntax, tier + result limit
 ```
 
 ### Key Design Decisions
@@ -30,7 +30,7 @@ src/
 
 ### Data Flow
 
-1. User enters a Lucene query in `QueryEditor`
+1. User enters a Lucene or DataPrime query in `QueryEditor`
 2. `datasource.query()` substitutes template variables and calls `doStream('/v1/query', ...)`
 3. `doStream()` POSTs to Grafana's proxy route (`/logs/v1/query`), which handles token auth
 4. SSE events are parsed; each `result.results[]` item becomes a log line
@@ -143,5 +143,5 @@ Tests go in `src/**/*.test.ts` or `src/**/__tests__/`. The test environment is j
 - **Query endpoint**: `POST /v1/query` (SSE response)
 - **Health check**: `GET /v1/data_usage`
 - **Auth**: IAM OAuth2 token via API key exchange
-- **Query syntax**: Lucene
+- **Query syntax**: Lucene (default) or DataPrime, selectable per query
 - **Search tier**: `frequent_search`

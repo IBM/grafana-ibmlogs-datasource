@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.5.0
+
+### Changes
+
+- Make the query syntax configurable per query via a new dropdown in the
+  query editor, so DataPrime queries can be used in addition to Lucene.
+  Existing saved queries are unaffected and continue to default to
+  `lucene` (#26)
+- Show query failures (e.g. a syntax error) as an error on the panel,
+  including the API's error message, instead of silently returning no data
+- Run the query when the query text or limit field loses focus or Enter is
+  pressed, instead of on every keystroke
+- Add query editor tests
+
 ## 2.4.1
 
 ### Changes
