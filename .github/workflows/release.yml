@@ -24,26 +24,48 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      # Key off the GitHub release rather than the tag: the tag is pushed before
+      # the release job runs, so a failed release would otherwise leave a tag that
+      # blocks every retry. Re-run with workflow_dispatch after fixing a failure.
       - name: Check for new version
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(jq -r .version package.json)
           TAG="v${VERSION}"
-          if git tag -l "$TAG" | grep -q "$TAG"; then
-            echo "Tag $TAG already exists, skipping release"
+          # Only a definite "release not found" means release. Any other failure
+          # (API outage, rate limit, auth) must fail the run rather than rebuild and
+          # overwrite an already-published release's assets.
+          if OUT=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" 2>&1); then
+            echo "Release $TAG already exists, skipping release"
             echo "release=false" >> $GITHUB_OUTPUT
-          else
-            echo "New version detected: $VERSION"
+          elif echo "$OUT" | grep -q "release not found"; then
+            echo "No release for $VERSION yet, releasing"
             echo "release=true" >> $GITHUB_OUTPUT
             echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Could not check for an existing $TAG release: $OUT"
+            exit 1
           fi
 
       - name: Create and push tag
         if: steps.check.outputs.release == 'true'
         run: |
           TAG="v${{ steps.check.outputs.version }}"
-          git tag "$TAG"
-          git push origin "$TAG" || echo "Tag already pushed by another run, skipping"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            # Retrying a failed release: the release job builds from the tag, so the
+            # released code is exactly what was originally tagged
+            TAG_VERSION=$(git show "$TAG:package.json" | jq -r .version)
+            if [ "$TAG_VERSION" != "${{ steps.check.outputs.version }}" ]; then
+              echo "::error::Tag $TAG has package.json version $TAG_VERSION; refusing to release it"
+              exit 1
+            fi
+            echo "Tag $TAG already exists at $(git rev-list -n 1 "$TAG"), reusing it"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
 
   release:
     needs: check-version
@@ -60,10 +82,13 @@ jobs:
         with:
           ref: v${{ needs.check-version.outputs.version }}
 
+      # Not node-version-file: this job checks out the release tag, whose .nvmrc may
+      # predate a toolchain bump (e.g. retrying v2.5.0, tagged with .nvmrc=20).
+      # Keep in sync with .nvmrc.
       - name: Setup Node.js environment
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Setup Go environment
@@ -83,6 +108,7 @@ jobs:
           echo Once done please follow the instructions found here: https://github.com/${{github.repository}}/blob/main/README.md#using-github-actions-release-workflow
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN == '' }}
 
+      # sign-plugin 4.x requires Node >= 24.5
       - name: Sign plugin
         run: npx @grafana/sign-plugin@latest --rootUrls "$ROOT_URL"
         if: ${{ env.GRAFANA_ACCESS_POLICY_TOKEN != '' }}
