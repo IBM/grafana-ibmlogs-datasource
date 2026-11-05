@@ -156,6 +156,16 @@ externalized in the webpack build, so it never ships in `dist/module.js` regardl
 calls `yaml.load()`, which is API-compatible in v4. Do not remove this override while
 `sprintf-js` remains unpatched.
 
+### `minimatch` override
+
+`package.json` rewrites any `minimatch@^10` request to `^11.0.4` (`"minimatch@^10": "^11.0.4"`).
+`eslint@10`, `@eslint/config-array`, and `@typescript-eslint/typescript-estree` come in via
+`@grafana/i18n` (a dependency of `@grafana/data`) and still declare `minimatch@^10`, which is
+vulnerable to GHSA-g3hv-75wg-m249 (CVE-2026-118764, fixed in 11.0.1). They only use
+`minimatch()`/`Minimatch`, whose API is unchanged in v11. Keying on `^10` leaves the
+`minimatch@3` consumers (eslint 8, jest, glob 7; unaffected) alone. Remove this override once
+those packages accept `minimatch@^11`. The direct `glob@^14` devDependency already pulls in `minimatch@11`.
+
 ## Testing
 
 Tests go in `src/**/*.test.ts` or `src/**/__tests__/`. The test environment is jsdom. CSS imports are mocked with `identity-obj-proxy`.
