@@ -156,6 +156,15 @@ externalized in the webpack build, so it never ships in `dist/module.js` regardl
 calls `yaml.load()`, which is API-compatible in v4. Do not remove this override while
 `sprintf-js` remains unpatched.
 
+### `i18next` override
+
+`package.json` forces `i18next-pseudo` (pulled in by `@grafana/i18n`) onto `i18next@^26.3.4`.
+`i18next-pseudo@2.2.1` is its latest release and still declares `i18next@^19`, which is
+vulnerable to GHSA-6jcc-5g8w-32mx (CVE-2026-63402, fixed in 26.3.4). `i18next-pseudo` never
+imports `i18next` at runtime (only its typings reference `PostProcessorModule`). It is a standalone
+post-processor that `@grafana/i18n` registers on its own i18next instance, so the override just
+dedupes onto the 26.x copy `@grafana/i18n` already uses. Remove it once `i18next-pseudo` drops or widens that dependency.
+
 ### `minimatch` override
 
 `package.json` rewrites any `minimatch@^10` request to `^11.0.4` (`"minimatch@^10": "^11.0.4"`).
