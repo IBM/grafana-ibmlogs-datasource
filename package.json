@@ -73,6 +73,9 @@
     "react-router-dom-v5-compat": {
       "react-router": "7.18.3"
     },
+    "i18next-pseudo": {
+      "i18next": "^26.3.4"
+    },
     "minimatch@^10": "^11.0.4"
   },
   "packageManager": "npm@11.11.0"
